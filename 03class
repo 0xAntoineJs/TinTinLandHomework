@@ -1,0 +1,60 @@
+//SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+pragma solidity ^0.8.0;
+
+contract Crowdfunding {
+    address payable public owner;
+    uint public totalRaised;
+    
+    struct Campaign {
+        string name;
+        uint goal;
+        uint raised;
+        bool active;
+        uint256 contributionsCount;
+    }
+
+    mapping (uint256 => mapping (address => uint256)) public contributions;
+    Campaign[] public campaigns;
+    
+    constructor() {
+        owner = payable(msg.sender);
+    }
+    
+    function contribute(uint campaignId) public payable {
+        require(campaigns[campaignId].active, "Campaign is not active");
+        require(msg.value > 0, "Contribution amount must be greater than zero");
+        
+        contributions[campaignId][msg.sender] += msg.value;
+        campaigns[campaignId].raised += msg.value;
+        campaigns[campaignId].contributionsCount++;
+        totalRaised += msg.value;
+    }
+    
+    function createCampaign(string memory name, uint goal) public {
+        Campaign memory newCampaign = Campaign({
+            name: name,
+            goal: goal,
+            raised: 0,
+            active: true,
+            contributionsCount: 0
+        });
+        
+        campaigns.push(newCampaign);
+    }
+    
+    function deactivateCampaign(uint campaignId) public {
+        require(msg.sender == owner, "Only the owner can deactivate campaigns");
+        
+        campaigns[campaignId].active = false;
+    }
+    
+    function withdraw() public {
+        require(msg.sender == owner, "Only the owner can withdraw funds");
+        
+        uint balance = address(this).balance;
+        owner.transfer(balance);
+    }
+}
+
